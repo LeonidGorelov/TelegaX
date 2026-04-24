@@ -1,0 +1,197 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+configurations {
+    compile.exclude module: 'support-v4'
+}
+
+configurations.all {
+    exclude group: 'com.google.firebase', module: 'firebase-core'
+    exclude group: 'androidx.recyclerview', module: 'recyclerview'
+}
+
+dependencies {
+    implementation project(':TMessagesProj')
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
+}
+
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+
+    namespace 'org.telegram.messenger.regular'
+    compileSdkVersion 35
+    buildToolsVersion '35.0.0'
+
+    defaultConfig {
+        applicationId APP_PACKAGE
+        minSdkVersion 21
+        targetSdkVersion 35
+        versionName APP_VERSION_NAME
+        versionCode Integer.parseInt(APP_VERSION_CODE)
+        ndkVersion "21.4.7075529"
+
+        buildConfigField "int", "APP_ID", System.getenv("APP_ID") ?: "0"
+        buildConfigField "String", "APP_HASH", "\"${System.getenv("APP_HASH")}\""
+        buildConfigField "String", "PROXY_IP", "\"${System.getenv("PROXY_IP")}\""
+        buildConfigField "int", "PROXY_PORT", System.getenv("PROXY_PORT") ?: "443"
+        buildConfigField "String", "PROXY_SECRET", "\"${System.getenv("PROXY_SECRET")}\""
+
+
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("../TMessagesProj/config/release.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+        release {
+            storeFile file("../TMessagesProj/config/release.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+            signingConfig signingConfigs.debug
+            applicationIdSuffix ".beta"
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    '../TMessagesProj/proguard-rules.pro',
+                    '../TMessagesProj/proguard-rules-beta.pro'
+        }
+
+        standalone {
+            debuggable false
+            jniDebuggable false
+            signingConfig signingConfigs.release
+            applicationIdSuffix ".web"
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    '../TMessagesProj/proguard-rules.pro'
+        }
+
+        release {
+            debuggable false
+            jniDebuggable false
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    '../TMessagesProj/proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "minApi", "abi"
+
+    productFlavors {
+        bundleAfat {
+            dimension "minApi"
+            minSdkVersion 21
+            ext { abiVersionCode = 1 }
+            buildConfigField "boolean", "BUNDLE", "true"
+        }
+
+        bundleAfat_SDK23 {
+            dimension "minApi"
+            minSdkVersion 23
+            ext { abiVersionCode = 2 }
+            buildConfigField "boolean", "BUNDLE", "true"
+        }
+
+        afat {
+            dimension "minApi"
+            minSdkVersion 21
+            ext { abiVersionCode = 9 }
+            buildConfigField "boolean", "BUNDLE", "false"
+        }
+
+        // ---- ABI FLAVORS ----
+        arm7 {
+            dimension "abi"
+            ndk { abiFilters "armeabi-v7a" }
+        }
+
+        arm64 {
+            dimension "abi"
+            ndk { abiFilters "arm64-v8a" }
+        }
+
+        x86 {
+            dimension "abi"
+            ndk { abiFilters "x86" }
+        }
+
+        x86_64 {
+            dimension "abi"
+            ndk { abiFilters "x86_64" }
+        }
+    }
+
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "app.apk"
+            output.versionCodeOverride =
+                    defaultConfig.versionCode * 10 + variant.productFlavors.get(0).abiVersionCode
+        }
+    }
+
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        if (variant.buildType.name != "release" && !names.contains("afat")) {
+            setIgnore(true)
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['../TMessagesProj/jni/']
+        }
+        debug {
+            manifest.srcFile '../TMessagesProj/config/debug/AndroidManifest.xml'
+        }
+        standalone {
+            manifest.srcFile '../TMessagesProj/config/release/AndroidManifest.xml'
+        }
+        release {
+            manifest.srcFile '../TMessagesProj/config/release/AndroidManifest.xml'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version '3.10.2'
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    lintOptions {
+        disable 'MissingTranslation'
+        disable 'ExtraTranslation'
+        disable 'BlockedPrivateApi'
+        checkReleaseBuilds false
+    }
+}

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "949748024395",
+    "project_id": "telega-x-17b3c",
+    "storage_bucket": "telega-x-17b3c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949748024395:android:fff7903d02b6091d44f9ce",
+        "android_client_info": {
+          "package_name": "ru.leonidgorelov.telegax"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq85VRY-cj-A-_o6V7c87UseKK34s2eOs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:949748024395:android:c99f5d9ad4fcecf544f9ce",
+        "android_client_info": {
+          "package_name": "ru.leonidgorelov.telegax.beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBq85VRY-cj-A-_o6V7c87UseKK34s2eOs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
