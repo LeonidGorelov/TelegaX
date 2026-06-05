@@ -8,10 +8,16 @@
 
 package org.telegram.messenger;
 
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import org.telegram.tgnet.ConnectionsManager;
 
 import java.util.Map;
 
@@ -19,15 +25,25 @@ public class GcmPushListenerService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage message) {
-        String from = message.getFrom();
+        //String from = message.getFrom();
         Map<String, String> data = message.getData();
-        long time = message.getSentTime();
+        //long time = message.getSentTime();
 
         if (BuildVars.LOGS_ENABLED) {
-            FileLog.d("FCM received data: " + data + " from: " + from);
+            //FileLog.d("FCM received data: " + data + " from: " + from);
+            FileLog.d("FCM received data");
         }
 
-        PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
+        ApplicationLoader.postInitApplication();
+
+        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+            if (UserConfig.getInstance(i).isClientActivated()) {
+                ConnectionsManager.getInstance(i).resumeNetworkMaybe();
+                MessagesController.getInstance(i).getDifference();
+            }
+        }
+
+        //PushListenerController.processRemoteMessage(PushListenerController.PUSH_TYPE_FIREBASE, data.get("p"), time);
     }
 
     @Override
@@ -36,6 +52,7 @@ public class GcmPushListenerService extends FirebaseMessagingService {
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("Refreshed FCM token: " + token);
             }
+
             ApplicationLoader.postInitApplication();
             PushListenerController.sendRegistrationToServer(PushListenerController.PUSH_TYPE_FIREBASE, token);
         });

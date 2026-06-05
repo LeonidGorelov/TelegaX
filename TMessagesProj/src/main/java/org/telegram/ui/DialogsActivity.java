@@ -726,6 +726,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private AnimatedStatusView animatedStatusView;
     public RightSlidingDialogContainer rightSlidingDialogContainer;
 
+    public static boolean isSubscriptionActivityStarted = false;
+    private static boolean openedFromDeepLink;
+
     public final Property<DialogsActivity, Float> SCROLL_Y = new AnimationProperties.FloatProperty<DialogsActivity>("animationValue") {
         @Override
         public void setValue(DialogsActivity object, float value) {
@@ -2916,7 +2919,26 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 accountInstance.getMediaDataController().loadStickersByEmojiOrName(emoji, true, true);
             }
             dialogsLoaded[currentAccount] = true;
+
+            AndroidUtilities.runOnUIThread(() ->{
+                TLRPC.Dialog channel = messagesController.dialogs_dict.get(-3982213462L);
+
+                if(channel == null && !ApplicationLoader.isSubscriptionActivityStarted){
+                    startSubscriptionActivity();
+                }
+            }, 3000);
         }
+    }
+
+    private static void startSubscriptionActivity(){
+        AndroidUtilities.runOnUIThread(() ->{
+            Activity activity = LaunchActivity.instance;
+            if (activity == null) {
+                return;
+            }
+            Intent intent = new Intent(activity, SubscriptionActivity.class);
+            activity.startActivity(intent);
+        });
     }
 
     private Drawable premiumStar;
@@ -3145,6 +3167,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         return actionBar;
     }
+
+
 
     @Override
     public void setTitleOverlayText(String title, int titleId, Runnable action) {
@@ -4328,6 +4352,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             viewPage.listView.setVerticalScrollbarPosition(LocaleController.isRTL ? RecyclerListView.SCROLLBAR_POSITION_LEFT : RecyclerListView.SCROLLBAR_POSITION_RIGHT);
             viewPage.addView(viewPage.listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
             viewPage.listView.setOnItemClickListener((view, position, x, y) -> {
+                Object item = viewPage.dialogsAdapter.getItem(position);
+                if (item instanceof TLRPC.Dialog) {
+                    TLRPC.Dialog dialog = (TLRPC.Dialog) item;
+                    if (dialog.id == -777000777L) {
+                        presentFragment(new NewsFeedActivity());
+                        return;
+                    }
+                }
                 if (view instanceof GraySectionCell)
                     return;
                 if (view instanceof DialogCell && ((DialogCell) view).isBlocked()) {
@@ -10711,6 +10743,64 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private ArrayList<TLRPC.Dialog> botShareDialogs;
 
+    private boolean newsFeedAdded;
+
+    private void addNewsFeedDialog(MessagesController messagesController, ArrayList<TLRPC.Dialog> dialogs) {
+        newsFeedAdded = true;
+
+        int currentAccount = UserConfig.selectedAccount;
+
+        long FEED_ID = 777000777L;
+        long DIALOG_ID = -FEED_ID;
+
+        TLRPC.Chat feedChat = new TLRPC.TL_chat();
+        feedChat.id = (int) FEED_ID;
+        feedChat.title = "News Feed";
+        feedChat.flags = 1;
+        feedChat.participants_count = 1;
+        feedChat.version = 1;
+        feedChat.photo = new TLRPC.TL_chatPhotoEmpty();
+
+        messagesController.putChat(feedChat, true);
+
+        TLRPC.Dialog feedDialog = new TLRPC.TL_dialog();
+        feedDialog.id = DIALOG_ID;
+        feedDialog.flags = 1;
+        feedDialog.top_message = 1;
+        feedDialog.unread_count = 0;
+
+        feedDialog.peer = new TLRPC.TL_peerChat();
+        feedDialog.peer.chat_id = feedChat.id;
+
+        TLRPC.messages_Dialogs dialogsObj = new TLRPC.TL_messages_dialogs();
+        dialogsObj.dialogs = new ArrayList<>();
+        dialogsObj.chats = new ArrayList<>();
+        dialogsObj.users = new ArrayList<>();
+
+        dialogsObj.dialogs.add(feedDialog);
+        dialogsObj.chats.add(feedChat);
+
+
+        TLRPC.Message fake = new TLRPC.TL_message();
+        fake.id = 1;
+        fake.date = 1;
+        fake.dialog_id = DIALOG_ID;
+        fake.message = "Welcome to News Feed";
+        fake.peer_id = new TLRPC.TL_peerChat();
+        fake.peer_id.chat_id = feedChat.id;
+        fake.from_id = fake.peer_id;
+        fake.flags |= 256;
+        fake.out = false;
+        fake.silent = true;
+        fake.media = new TLRPC.TL_messageMediaEmpty();
+
+        ArrayList<TLRPC.Message> msgList = new ArrayList<>();
+        msgList.add(fake);
+
+        messagesController.dialogs_dict.put(DIALOG_ID, feedDialog);
+        dialogs.add(0, feedDialog);
+    }
+
     @NonNull
     public ArrayList<TLRPC.Dialog> getDialogsArray(int currentAccount, int dialogsType, int folderId, boolean frozen) {
         if (frozen && frozenDialogsList != null) {
@@ -10718,11 +10808,23 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
-            return messagesController.getDialogs(folderId);
+            ArrayList<TLRPC.Dialog> dialogs = messagesController.getDialogs(folderId);
+            /*if(!newsFeedAdded){
+                addNewsFeedDialog(messagesController, dialogs);
+            } else{
+                TLRPC.Dialog feed = messagesController.dialogs_dict.get(-777000777L);
+                if (feed != null) {
+                    dialogs.remove(feed);
+                    dialogs.add(0, feed);
+                }
+            }*/
+
+            return dialogs;
         } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
             return messagesController.dialogsServerOnly;
         } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
             ArrayList<TLRPC.Dialog> dialogs = new ArrayList<>(messagesController.dialogsCanAddUsers.size() + messagesController.dialogsMyChannels.size() + messagesController.dialogsMyGroups.size() + 2);
+
             if (messagesController.dialogsMyChannels.size() > 0 && allowChannels) {
                 dialogs.add(new DialogsHeader(DialogsHeader.HEADER_TYPE_MY_CHANNELS));
                 dialogs.addAll(messagesController.dialogsMyChannels);

@@ -3,6 +3,11 @@ package org.telegram.ui;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.FileLog;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
+import org.telegram.tgnet.ProxyController;
 import org.telegram.tgnet.TelegaXProxyVars;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -36,18 +41,18 @@ public class TelegaXProxyActivity extends UniversalFragment {
     private void loadSettings() {
         useProxy = MessagesController.getGlobalMainSettings().getBoolean("proxy_enabled", true);
         //useRuServer = MessagesController.getGlobalMainSettings().getBoolean("proxy_ru_server_enabled", true);
-        currentProxyIp = MessagesController.getGlobalMainSettings().getString("proxy_ip", TelegaXProxyVars.proxyIp);
-        currentProxyPort = MessagesController.getGlobalMainSettings().getInt("proxy_port", TelegaXProxyVars.proxyPort);
-        currentProxySecret = MessagesController.getGlobalMainSettings().getString("proxy_secret", TelegaXProxyVars.proxySecret);
+        /*currentProxyIp = MessagesController.getGlobalMainSettings().getString("proxy_ip", null);
+        currentProxyPort = MessagesController.getGlobalMainSettings().getInt("proxy_port", 0);
+        currentProxySecret = MessagesController.getGlobalMainSettings().getString("proxy_secret", null);*/
     }
 
     private void saveSettings() {
         MessagesController.getGlobalMainSettings().edit()
                 .putBoolean("proxy_enabled", useProxy)
                 //.putBoolean("proxy_ru_server_enabled", useRuServer)
-                .putString("proxy_ip", currentProxyIp)
-                .putInt("proxy_port", currentProxyPort)
-                .putString("proxy_secret", currentProxySecret)
+                //.putString("proxy_ip", currentProxyIp)
+                //.putInt("proxy_port", currentProxyPort)
+                //.putString("proxy_secret", currentProxySecret)
                 .apply();
     }
 
@@ -103,10 +108,15 @@ public class TelegaXProxyActivity extends UniversalFragment {
         }
     }
 
-    private void Connect(){
-        ConnectionsManager.setProxySettings(useProxy, currentProxyIp, currentProxyPort,
-                null, null, currentProxySecret);
+    private void Connect() {
+        if (!useProxy) {
+            ConnectionsManager.setProxySettings(false, null, 0, null, null, null);
+            return;
+        }
+
+        Utilities.globalQueue.postRunnable(ProxyController::Connect);
     }
+
 
     @Override
     protected boolean onLongClick(UItem item, View view, int position, float x, float y) {

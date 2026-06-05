@@ -1,3 +1,20 @@
+pluginManagement {
+    repositories {
+        maven { url uri("C:/local-maven-repo") }
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        maven { url uri("C:/local-maven-repo") }
+        google()
+        mavenCentral()
+    }
+}
+
 include ':TMessagesProj'
 include ':TMessagesProj_App'
 include ':TMessagesProj_AppHuawei'

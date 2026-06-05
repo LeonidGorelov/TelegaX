@@ -609,15 +609,20 @@ public class ConnectionsManager extends BaseController {
 
     public void init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, int timezoneOffset, long userId, boolean userPremium, boolean enablePushConnection) {
         SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-        String proxyAddress = preferences.getString("proxy_ip", TelegaXProxyVars.proxyIp);
+        boolean useProxy = preferences.getBoolean("proxy_enabled", true);
+        String proxyAddress = preferences.getString("proxy_ip", null);
         String proxyUsername = preferences.getString("proxy_user", "");
         String proxyPassword = preferences.getString("proxy_pass", "");
-        String proxySecret = preferences.getString("proxy_secret", TelegaXProxyVars.proxySecret);
-        int proxyPort = preferences.getInt("proxy_port", TelegaXProxyVars.proxyPort);
+        String proxySecret = preferences.getString("proxy_secret", null);
+        int proxyPort = preferences.getInt("proxy_port", 0);
 
-        if (preferences.getBoolean("proxy_enabled", true) && !TextUtils.isEmpty(proxyAddress)) {
-            native_setProxySettings(currentAccount, proxyAddress, proxyPort, proxyUsername, proxyPassword, proxySecret);
+        if (!useProxy) {
+            native_setProxySettings(currentAccount, "", 0, "", "", "");
+            return;
         }
+
+        Utilities.globalQueue.postRunnable(ProxyController::Connect);
+
         String installer = "";
         try {
             Context context = ApplicationLoader.applicationContext;

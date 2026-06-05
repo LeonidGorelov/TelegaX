@@ -7,7 +7,6 @@
  */
 
 package org.telegram.messenger;
-
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.replaceTags;
 import static org.telegram.messenger.LocaleController.formatPluralSpannable;
@@ -41,10 +40,13 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.Base64;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.collection.LongSparseArray;
 import androidx.core.graphics.ColorUtils;
+
+import com.google.android.exoplayer2.ext.ffmpeg.FfmpegLibrary;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
@@ -100,6 +102,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7075,6 +7078,27 @@ public class MessageObject {
         if (messageOwner == null || messageOwner.voiceTranscription == null) {
             return null;
         }
+
+        /* File file;
+
+
+        if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
+
+            file = FileLoader.getInstance(currentAccount).getPathToAttach(getMedia(messageOwner).webpage.document, true);
+        }
+        else{
+         file = FileLoader.getInstance(currentAccount).getPathToAttach(getMedia(messageOwner).document, true);
+        }
+
+        if(file.exists()){
+            Model langModel = new Model(getAssets(), "lang-id");
+            Recognizer rec = new Recognizer(langModel, 16000.0f);
+
+            rec.acceptWaveForm(file);
+            String result = rec.getFinalResult();
+
+        }*/
+
         if (TextUtils.isEmpty(messageOwner.voiceTranscription)) {
             SpannableString ssb = new SpannableString(getString(R.string.NoWordsRecognized));
             ssb.setSpan(new CharacterStyle() {
@@ -7092,6 +7116,7 @@ public class MessageObject {
         }
         return text;
     }
+
 
     public float measureVoiceTranscriptionHeight() {
         CharSequence voiceTranscription = getVoiceTranscription();

@@ -16,7 +16,9 @@ configurations.all {
 }
 
 dependencies {
+    //implementation 'com.alphacephei:vosk-android:0.3.75'
     implementation project(':TMessagesProj')
+    //implementation 'com.arthenica:ffmpeg-kit-full:6.0-2'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
 }

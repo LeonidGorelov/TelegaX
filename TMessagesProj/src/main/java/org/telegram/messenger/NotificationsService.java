@@ -18,7 +18,7 @@ import java.util.Random;
 
 public class NotificationsService extends Service {
 
-    private static final String CHANNEL_ID = "telegax_push";
+    /*private static final String CHANNEL_ID = "telegax_push";
     private static final String[] cuteTexts = new String[]{
             "⊂(◉‿◉)つ",
             "(｡◕‿‿◕｡)",
@@ -43,7 +43,7 @@ public class NotificationsService extends Service {
             "╮(︶▽︶)╭",
             "(￣～￣;)",
             "(＾• ω •＾)"
-    };
+    };*/
 
     @Override
     public void onCreate() {
@@ -51,7 +51,8 @@ public class NotificationsService extends Service {
 
         ApplicationLoader.postInitApplication();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        /* if (MessagesController.getGlobalNotificationsSettings().getBoolean("useNotificationServiceTelegaX", false) &&
+               Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             NotificationChannelCompat channel = new NotificationChannelCompat.Builder(
                     CHANNEL_ID,
@@ -66,40 +67,41 @@ public class NotificationsService extends Service {
 
             NotificationManagerCompat.from(this).createNotificationChannel(channel);
 
-            String text = cuteTexts[new Random().nextInt(cuteTexts.length)];
-
             Notification notification;
 
-            try {
-                Intent startIntent = new Intent(this, LaunchActivity.class);
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        this,
-                        0,
-                        startIntent,
-                        PendingIntent.FLAG_MUTABLE
-                );
+            Intent startIntent = new Intent(this, LaunchActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    startIntent,
+                    PendingIntent.FLAG_MUTABLE
+            );
 
-                notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setContentIntent(pendingIntent)
-                        .setSmallIcon(R.drawable.notification)
-                        .setShowWhen(false)
-                        .setOngoing(true)
-                        .setContentText(text)
-                        .setCategory(NotificationCompat.CATEGORY_STATUS)
-                        .build();
-
-            } catch (Exception e) {
-                notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.drawable.notification)
-                        .setShowWhen(false)
-                        .setOngoing(true)
-                        .setContentText(text)
-                        .setCategory(NotificationCompat.CATEGORY_STATUS)
-                        .build();
-            }
+            notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentIntent(pendingIntent)
+                    .setSmallIcon(R.drawable.ic_transparent)
+                    .setShowWhen(false)
+                    .setOngoing(true)
+                    .setContentTitle(null)
+                    .setContentText(null)
+                    .setPriority(NotificationCompat.PRIORITY_MIN)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .build();
 
             startForeground(9999, notification);
-        }
+        } else {
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setSmallIcon(R.drawable.ic_transparent)
+                    .setShowWhen(false)
+                    .setOngoing(true)
+                    .setContentTitle(null)
+                    .setContentText(null)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setPriority(NotificationCompat.PRIORITY_MIN)
+                    .build();
+
+            startForeground(9999, notification);
+        }*/
     }
 
     @Override

@@ -13,7 +13,10 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
 import android.app.PendingIntent;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -25,19 +28,24 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import org.json.JSONObject;
+import org.telegram.AutoStartHelper;
+import org.telegram.KeepAliveJobService;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -51,6 +59,8 @@ import java.io.File;
 import java.util.Locale;
 
 public class ApplicationLoader extends Application {
+
+    private static PendingIntent pendingIntent;
 
     public static ApplicationLoader applicationLoaderInstance;
 
@@ -78,7 +88,7 @@ public class ApplicationLoader extends Application {
     private static PushListenerController.IPushListenerServiceProvider pushProvider;
     private static IMapsProvider mapsProvider;
     private static ILocationServiceProvider locationServiceProvider;
-
+    public static boolean isSubscriptionActivityStarted;
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
@@ -343,11 +353,25 @@ public class ApplicationLoader extends Application {
 
         applicationHandler = new Handler(applicationContext.getMainLooper());
 
-        AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
-
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
+        //initJobScheduler();
+        //initAlarmFallback();
+
+        /*requestIgnoreBatteryOptimizations(applicationContext);
+
+        if(!applicationContext.getSharedPreferences("telegax_prefs", Context.MODE_PRIVATE)
+                .getBoolean("autostart_shown", false)){
+            AndroidUtilities.runOnUIThread(() -> {
+                AutoStartHelper.openAutoStart(applicationContext);
+            });
+
+            applicationContext.getSharedPreferences("telegax_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("autostart_shown", true)
+                    .apply();
+        }*/
     }
 
     public static void startPushService() {
@@ -360,20 +384,90 @@ public class ApplicationLoader extends Application {
         }
         if (enabled) {
             try {
-                AlarmManager am = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
+                applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                //if(preferences.getBoolean("useNotificationServiceTelegaX", false)){
+                /*AlarmManager am = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
                 Intent i = new Intent(applicationContext, NotificationsService.class);
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(applicationContext, 0, i, PendingIntent.FLAG_MUTABLE);
+                    //pendingIntent = PendingIntent.getBroadcast(applicationContext, 0, i, PendingIntent.FLAG_MUTABLE);
+                pendingIntent = PendingIntent.getService(applicationContext, 0, i, PendingIntent.FLAG_MUTABLE);
+
 
                 am.cancel(pendingIntent);
-                am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000, pendingIntent);
-                applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000, pendingIntent);*/
+                //}
+
+                //applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    ContextCompat.startForegroundService(applicationContext, new Intent(applicationContext, NotificationsService.class));
+                    //applicationContext.startForegroundService(new Intent((applicationContext, NotificationsService.class));
+                } else {
+                    applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                }*/
             } catch (Throwable ignore) {
 
             }
         } else {
             applicationContext.stopService(new Intent(applicationContext, NotificationsService.class));
+
+            //if(preferences.getBoolean("useNotificationServiceTelegaX", false)){
+                /*PendingIntent pintent = PendingIntent.getService(applicationContext, 0, new Intent(applicationContext, NotificationsService.class), PendingIntent.FLAG_MUTABLE);
+                AlarmManager alarm = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
+                alarm.cancel(pintent);
+                if (pendingIntent != null) {
+                    alarm.cancel(pendingIntent);
+                }*/
+            //}
         }
     }
+
+    private void initJobScheduler() {
+        ComponentName component = new ComponentName(applicationContext, KeepAliveJobService.class);
+
+        JobInfo job = new JobInfo.Builder(1234, component)
+                .setPeriodic(15 * 60 * 1000)
+                .setPersisted(true)
+                .build();
+
+        JobScheduler scheduler = (JobScheduler) applicationContext.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        scheduler.schedule(job);
+    }
+
+    private void initAlarmFallback() {
+        AlarmManager am = (AlarmManager) applicationContext.getSystemService(Context.ALARM_SERVICE);
+
+        Intent i = new Intent(applicationContext, NotificationsService.class);
+
+        PendingIntent pi = PendingIntent.getService(
+                applicationContext,
+                0,
+                i,
+                PendingIntent.FLAG_MUTABLE
+        );
+
+        am.cancel(pi);
+
+        am.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 60_000,
+                60_000,
+                pi
+        );
+    }
+
+    public static void requestIgnoreBatteryOptimizations(Context context) {
+        try {
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!pm.isIgnoringBatteryOptimizations(context.getPackageName())) {
+                    Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(Uri.parse("package:" + context.getPackageName()));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                }
+            }
+        } catch (Throwable ignore) {}
+    }
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {

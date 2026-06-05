@@ -139,6 +139,7 @@ import org.telegram.messenger.voip.VoIPPendingCall;
 import org.telegram.messenger.voip.VoIPPreNotificationService;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
+import org.telegram.tgnet.ProxyController;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLParseException;
 import org.telegram.tgnet.TLRPC;
@@ -255,7 +256,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     public ArrayList<INavigationLayout> sheetFragmentsStack = new ArrayList<>();
 
     private boolean finished;
-    private static boolean isSubscriptionActivityStarted;
     private String videoPath;
     private String voicePath;
     private String sendingText;
@@ -376,24 +376,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        /*AndroidUtilities.runOnUIThread(() -> {
-            Activity activity = (Activity) ApplicationLoader.applicationContext;
-            if (activity != null) {
-                new AlertDialog.Builder(activity)
-                        .setTitle("TelegaX")
-                        .setMessage("dialogsNeedReload — all dialogs loaded")
-                        .setPositiveButton("OK", null)
-                        .show();
-            }
-        });
-
-        AndroidUtilities.runOnUIThread(() ->
-                Toast.makeText((Activity) ApplicationLoader.applicationContext, "TelegaX: dialogs loaded", Toast.LENGTH_LONG).show()
-        );
-
-
-        DebugOverlay.show("Test");*/
-
         isActive = true;
         if (BuildVars.DEBUG_VERSION) {
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
@@ -408,6 +390,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
             Intent intent = getIntent();
+
             boolean isProxy = false;
             if (intent != null && intent.getAction() != null) {
                 if (Intent.ACTION_SEND.equals(intent.getAction()) || Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
@@ -830,30 +813,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         //    refreshRateController = new RefreshRateController(this);
         //}
         checkFrameMetrics();
-        checkSubscription();
 
-    }
-
-    private void checkSubscription(){
         AndroidUtilities.runOnUIThread(() ->{
-            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(3982213462L);
-
-            if ((chat == null || chat.left) &&
-                    UserConfig.getInstance(currentAccount).isClientActivated() && !isSubscriptionActivityStarted){
-                isSubscriptionActivityStarted = true;
-                startSubscriptionActivity();
-            }
-
-            checkSubscription();
+            ProxyController.markUserActive(UserConfig.getInstance(currentAccount).getClientUserId());
         }, 1000);
-    }
-
-    private void startSubscriptionActivity(){
-        AndroidUtilities.runOnUIThread(() ->{
-            Intent intent = new Intent(this, SubscriptionActivity.class);
-            startActivity(intent);
-            finish();
-        });
     }
 
     public void checkFrameMetrics() {

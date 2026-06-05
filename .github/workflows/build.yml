@@ -61,38 +61,117 @@ jobs:
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > TMessagesProj/config/release.keystore
 
-      - name: Build ARMv7
-        run: ./gradlew assembleAfatArm7Release --no-daemon --no-build-cache --stacktrace --info
+      - name: Read version
+        run: echo "VERSION=$(grep '^APP_VERSION_NAME=' gradle.properties | cut -d'=' -f2)" >> $GITHUB_ENV
 
-      - name: Upload ARMv7 APK
+      - name: Set package to TelegaX
+        run: sed -i 's/^APP_PACKAGE=.*/APP_PACKAGE=ru.leonidgorelov.telegax/' gradle.properties
+
+      - name: Use TelegaX google-services.json
+        run: |
+          cp configs/google-services-TelegaX.json TMessagesProj/google-services.json
+          cp configs/google-services-App-TelegaX.json TMessagesProj_App/google-services.json
+
+      - name: Build TelegaX ARMv7
+        run: ./gradlew assembleAfatArm7Release --no-daemon --no-build-cache
+
+      - name: Build TelegaX ARM64
+        run: ./gradlew assembleAfatArm64Release --no-daemon --no-build-cache
+
+      - name: Build TelegaX X86
+        run: ./gradlew assembleAfatX86Release --no-daemon --no-build-cache
+
+      - name: Build TelegaX X86_64
+        run: ./gradlew assembleAfatX86_64Release --no-daemon --no-build-cache
+
+      - name: Rename TelegaX APKs
+        run: |
+          mv TMessagesProj_App/build/outputs/apk/afatArm7/release/*.apk TelegaX-${VERSION}-arm7.apk
+          mv TMessagesProj_App/build/outputs/apk/afatArm64/release/*.apk TelegaX-${VERSION}-arm64.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86/release/*.apk TelegaX-${VERSION}-x86.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86_64/release/*.apk TelegaX-${VERSION}-x86_64.apk
+
+      - name: Upload TelegaX APKs
         uses: actions/upload-artifact@v4
         with:
-          name: TelegaX-arm7
-          path: TMessagesProj_App/build/outputs/apk/afatArm7/release/*.apk
+          name: TelegaX-${{ env.VERSION }}
+          path: |
+            TelegaX-${{ env.VERSION }}-arm7.apk
+            TelegaX-${{ env.VERSION }}-arm64.apk
+            TelegaX-${{ env.VERSION }}-x86.apk
+            TelegaX-${{ env.VERSION }}-x86_64.apk
 
-      - name: Build ARM64
-        run: ./gradlew assembleAfatArm64Release --no-daemon --no-build-cache --stacktrace --info
+      - name: Set package to FCM
+        run: sed -i 's/^APP_PACKAGE=.*/APP_PACKAGE=org.telegram.messenger/' gradle.properties
 
-      - name: Upload ARM64 APK
+      - name: Use FCM google-services.json
+        run: |
+          cp configs/google-services-App-TelegaX-FCM.json TMessagesProj/google-services.json
+          cp configs/google-services-App-TelegaX-FCM.json TMessagesProj_App/google-services.json
+
+      - name: Build FCM ARMv7
+        run: ./gradlew assembleAfatArm7Release --no-daemon --no-build-cache
+
+      - name: Build FCM ARM64
+        run: ./gradlew assembleAfatArm64Release --no-daemon --no-build-cache
+
+      - name: Build FCM X86
+        run: ./gradlew assembleAfatX86Release --no-daemon --no-build-cache
+
+      - name: Build FCM X86_64
+        run: ./gradlew assembleAfatX86_64Release --no-daemon --no-build-cache
+
+      - name: Rename FCM APKs
+        run: |
+          mv TMessagesProj_App/build/outputs/apk/afatArm7/release/*.apk FCM-TelegaX-${VERSION}-arm7.apk
+          mv TMessagesProj_App/build/outputs/apk/afatArm64/release/*.apk FCM-TelegaX-${VERSION}-arm64.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86/release/*.apk FCM-TelegaX-${VERSION}-x86.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86_64/release/*.apk FCM-TelegaX-${VERSION}-x86_64.apk
+
+      - name: Upload FCM APKs
         uses: actions/upload-artifact@v4
         with:
-          name: TelegaX-arm64
-          path: TMessagesProj_App/build/outputs/apk/afatArm64/release/*.apk
+          name: FCM-TelegaX-${{ env.VERSION }}
+          path: |
+            FCM-TelegaX-${{ env.VERSION }}-arm7.apk
+            FCM-TelegaX-${{ env.VERSION }}-arm64.apk
+            FCM-TelegaX-${{ env.VERSION }}-x86.apk
+            FCM-TelegaX-${{ env.VERSION }}-x86_64.apk
 
-      - name: Build X86
-        run: ./gradlew assembleAfatX86Release --no-daemon --no-build-cache --stacktrace --info
+      - name: Set package to FCM Beta
+        run: sed -i 's/^APP_PACKAGE=.*/APP_PACKAGE=org.telegram.messenger.beta/' gradle.properties
 
-      - name: Upload X86 APK
+      - name: Use FCM Beta google-services.json
+        run: |
+          cp configs/google-services-App-TelegaX-FCM.json TMessagesProj/google-services.json
+          cp configs/google-services-App-TelegaX-FCM.json TMessagesProj_App/google-services.json
+
+      - name: Build FCM Beta ARMv7
+        run: ./gradlew assembleAfatArm7Release --no-daemon --no-build-cache
+
+      - name: Build FCM Beta ARM64
+        run: ./gradlew assembleAfatArm64Release --no-daemon --no-build-cache
+
+      - name: Build FCM Beta X86
+        run: ./gradlew assembleAfatX86Release --no-daemon --no-build-cache
+
+      - name: Build FCM Beta X86_64
+        run: ./gradlew assembleAfatX86_64Release --no-daemon --no-build-cache
+
+      - name: Rename FCM Beta APKs
+        run: |
+          mv TMessagesProj_App/build/outputs/apk/afatArm7/release/*.apk FCM-Beta-TelegaX-${VERSION}-arm7.apk
+          mv TMessagesProj_App/build/outputs/apk/afatArm64/release/*.apk FCM-Beta-TelegaX-${VERSION}-arm64.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86/release/*.apk FCM-Beta-TelegaX-${VERSION}-x86.apk
+          mv TMessagesProj_App/build/outputs/apk/afatX86_64/release/*.apk FCM-Beta-TelegaX-${VERSION}-x86_64.apk
+
+      - name: Upload FCM Beta APKs
         uses: actions/upload-artifact@v4
         with:
-          name: TelegaX-x86
-          path: TMessagesProj_App/build/outputs/apk/afatX86/release/*.apk
+          name: FCM-Beta-TelegaX-${{ env.VERSION }}
+          path: |
+            FCM-Beta-TelegaX-${{ env.VERSION }}-arm7.apk
+            FCM-Beta-TelegaX-${{ env.VERSION }}-arm64.apk
+            FCM-Beta-TelegaX-${{ env.VERSION }}-x86.apk
+            FCM-Beta-TelegaX-${{ env.VERSION }}-x86_64.apk
 
-      - name: Build X86_64
-        run: ./gradlew assembleAfatX86_64Release --no-daemon --no-build-cache --stacktrace --info
-
-      - name: Upload X86_64 APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TelegaX-x86_64
-          path: TMessagesProj_App/build/outputs/apk/afatX86_64/release/*.apk

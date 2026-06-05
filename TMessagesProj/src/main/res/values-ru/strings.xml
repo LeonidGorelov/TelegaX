@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="UseNotificationServiceTelegaX">Использовать сервис уведомлений Telega X</string>
+    <string name="UseNotificationServiceTelegaXDescription">Используйте этот сервис для получения уведомлений без FCM</string>
     <string name="LocalPremiumEnabled">Включить локальный премиум</string>
     <string name="HidePremiumIcon">Скрыть премиум иконки</string>
     <string name="UseProxy">Использовать проски</string>
@@ -9,7 +11,7 @@
     <string name="SubscribeSubtitle">Чтобы пользоваться приложением, подпишитесь на наш канал @TelegaX_Ru</string>
     <string name="SubscribeButton">Подписаться</string>
     <string name="AppName">Telega X</string>
-    <string name="AppNameBeta">Telega X Beta</string>
+    <string name="AppNameBeta">Telega X</string>
     <string name="LanguageName">Русский</string>
     <string name="English">Английский</string>
     <string name="LanguageNameInEnglish">Russian</string>

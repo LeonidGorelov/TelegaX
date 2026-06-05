@@ -42,7 +42,6 @@ import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.view.Gravity;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -108,7 +107,6 @@ import org.telegram.ui.SecretMediaViewer;
 import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.SubscriptionActivity;
 import org.telegram.ui.ThemeActivity;
 import org.telegram.ui.TopicsFragment;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
@@ -530,6 +528,7 @@ public class MessagesController extends BaseController implements NotificationCe
     public String youtubePipType;
     public boolean keepAliveService;
     public boolean backgroundConnection;
+    public boolean useNotificationServiceTelegaX;
     public float animatedEmojisZoom;
     public boolean filtersEnabled;
     public boolean getfileExperimentalParams;
@@ -1558,8 +1557,9 @@ public class MessagesController extends BaseController implements NotificationCe
         canRevokePmInbox = mainPreferences.getBoolean("canRevokePmInbox", canRevokePmInbox);
         preloadFeaturedStickers = mainPreferences.getBoolean("preloadFeaturedStickers", false);
         youtubePipType = mainPreferences.getString("youtubePipType", "disabled");
-        keepAliveService = mainPreferences.getBoolean("keepAliveService", true);
-        backgroundConnection = mainPreferences.getBoolean("keepAliveService", true);
+        keepAliveService = mainPreferences.getBoolean("keepAliveService", false);
+        backgroundConnection = mainPreferences.getBoolean("keepAliveService", false);
+        useNotificationServiceTelegaX = mainPreferences.getBoolean("useNotificationServiceTelegaX", false);
         promoDialogId = mainPreferences.getLong("proxy_dialog", 0);
         nextPromoInfoCheckTime = mainPreferences.getInt("nextPromoInfoCheckTime", 0);
         promoDialogType = mainPreferences.getInt("promo_dialog_type", 0);
@@ -6654,7 +6654,39 @@ public class MessagesController extends BaseController implements NotificationCe
         if (id == 0) {
             return UserConfig.getInstance(currentAccount).getCurrentUser();
         }
-        return users.get(id);
+
+        TLRPC.User user = users.get(id);
+
+        if(user != null){
+            applyCustomRestrictionIfNeeded(user);
+        }
+
+        return user;
+    }
+
+    private void applyCustomRestrictionIfNeeded(TLRPC.User user) {
+        /*long targetId = 8291407963L;
+
+        if (user.id != targetId) {
+            return;
+        }
+
+        if (user.restriction_reason == null) {
+            user.restriction_reason = new ArrayList<>();
+        }
+
+        for (TLRPC.RestrictionReason r : user.restriction_reason) {
+            if ("telegax_block".equals(r.reason)) {
+                return;
+            }
+        }
+
+        TLRPC.TL_reastrictionReason reason = new TLRPC.TL_reastrictionReason();
+        reason.platform = "all";
+        reason.reason = "telegax_block";
+        reason.text = "Этот пользователь заблокирован Telega X";
+
+        user.restriction_reason.add(reason);*/
     }
 
     public TLObject getUserOrChat(long dialogId) {
@@ -6689,8 +6721,40 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public TLRPC.Chat getChat(Long id) {
-        return chats.get(id);
+        TLRPC.Chat chat = chats.get(id);
+
+        if (chat != null) {
+            applyCustomRestrictionIfNeeded(chat);
+        }
+
+        return chat;
     }
+
+    private void applyCustomRestrictionIfNeeded(TLRPC.Chat chat) {
+        /*long targetId = 3982213462L;
+
+        if (chat.id != targetId) {
+            return;
+        }
+
+        if (chat.restriction_reason == null) {
+            chat.restriction_reason = new ArrayList<>();
+        }
+
+        for (TLRPC.RestrictionReason r : chat.restriction_reason) {
+            if ("telegax_block".equals(r.reason)) {
+                return;
+            }
+        }
+
+        TLRPC.TL_reastrictionReason reason = new TLRPC.TL_reastrictionReason();
+        reason.platform = "all";
+        reason.reason = "telegax_block";
+        reason.text = "Этот чат заблокирован Telega X";
+
+        chat.restriction_reason.add(reason);*/
+    }
+
 
     public TLRPC.EncryptedChat getEncryptedChat(Integer id) {
         return encryptedChats.get(id);
