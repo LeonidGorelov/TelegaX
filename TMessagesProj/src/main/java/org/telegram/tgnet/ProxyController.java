@@ -123,12 +123,12 @@ public class ProxyController {
 
         AndroidUtilities.runOnUIThread(() -> {
             if (proxy == null) {
-                String proxyAddress = preferences.getString("previous_proxy_ip", null);
+                String proxyAddress = preferences.getString("previous_proxy_ip", "45.67.131.84");
                 String proxyUsername = preferences.getString("previous_proxy_user", null);
                 String proxyPassword = preferences.getString("previous_proxy_pass", null);
-                String proxySecret = preferences.getString("previous_proxy_secret", null);
-                int proxyPort = preferences.getInt("previous_proxy_port", 0);
-                ConnectionsManager.setProxySettings(false, proxyAddress, proxyPort, proxyUsername, proxyPassword, proxySecret);
+                String proxySecret = preferences.getString("previous_proxy_secret", "ee0123456789abcdef0123456789abcdef7777772e676f6f676c652e636f6d");
+                int proxyPort = preferences.getInt("previous_proxy_port", 443);
+                ConnectionsManager.setProxySettings(true, proxyAddress, proxyPort, proxyUsername, proxyPassword, proxySecret);
                 return;
             }
 
